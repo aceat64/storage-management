@@ -1,8 +1,0 @@
-create_table("notifications") {
-	t.Column("id", "uuid", {"primary": true})
-	t.Column("created_at", "timestamp", {})
-	t.Column("ticket_id", "uuid", {})
-	t.Column("type", "string", {})
-	t.ForeignKey("ticket_id", {"tickets": ["id"]}, {"on_delete": "cascade"})
-	t.DisableTimestamps()
-}
