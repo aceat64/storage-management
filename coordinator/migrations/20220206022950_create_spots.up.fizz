@@ -1,0 +1,9 @@
+create_table("spots") {
+	t.Column("id", "uuid", {"primary": true})
+	t.Column("name", "string", {})
+	t.Column("area_id", "uuid", {})
+	t.ForeignKey("area_id", {"areas": ["id"]}, {"on_delete": "cascade"})
+  t.DisableTimestamps()
+}
+
+add_index("spots", "name", {"unique": true})

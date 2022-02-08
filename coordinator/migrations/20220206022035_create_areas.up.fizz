@@ -1,0 +1,7 @@
+create_table("areas") {
+	t.Column("id", "uuid", {"primary": true})
+	t.Column("name", "string", {})	
+  t.DisableTimestamps()
+}
+
+add_index("areas", "name", {"unique": true})
