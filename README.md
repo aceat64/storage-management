@@ -13,7 +13,7 @@
 ### User closes ticket
 
 * Only if finished_at = null (ticket is still active)
-* If t.now <= expires_at, user_id.banned_until set to t+7d
+* If t.now <= expires_at, user_id.banned_until set to 7d - (t.now - created_at)
 * If t.now > expires_at, user_id.banned_until set to t+14d
 
 ### Scheduled checks
