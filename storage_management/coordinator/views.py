@@ -17,8 +17,7 @@ from .serializers import (
     TicketSerializer,
     NotificationSerializer,
 )
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from django.db.models import Q
 
 
 class AreaViewSet(viewsets.ModelViewSet):
@@ -41,6 +40,15 @@ class SpotViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ["area"]
     search_fields = ["name"]
+
+    @action(detail=False)
+    def available(self, request):
+        spots = Spot.objects.all().exclude(
+            tickets__isnull=False, tickets__finished_at__isnull=True
+        )
+        print(spots.query)
+        serializer = SpotSerializer(spots, many=True, context={"request": request})
+        return Response(serializer.data)
 
 
 class MemberViewSet(viewsets.ModelViewSet):
