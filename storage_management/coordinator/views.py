@@ -1,9 +1,10 @@
 from datetime import timedelta
-from django.core.mail import send_mail
+from django.core.mail import send_mail, send_mass_mail
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+import logging
 from django.shortcuts import get_object_or_404
 from .models import (
     Area,
@@ -21,6 +22,9 @@ from .serializers import (
 )
 from storage_management.settings import STORAGE_RULES
 from .utils import pretty_datetime
+
+
+logger = logging.getLogger(__name__)
 
 
 class AreaViewSet(viewsets.ModelViewSet):
@@ -139,55 +143,125 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=False)
     def check(self, request):
+        messages = ()
         for ticket in Ticket.objects.filter(finished_at=None):
-            member = ticket.member
             # todo: check against /member/create (lookupByRfid), in case their email address changed
-            # inspect(type(member), title="type(member)")
             prior_notification_types = [
                 notification.type
                 for notification in Notification.objects.filter(ticket=ticket)
             ]
+
             if (
                 timezone.now() + timedelta(hours=48) > ticket.expires_at
                 and "48_UNTIL_EXPIRED" not in prior_notification_types
             ):
                 # Send notice: 48 hours remaining
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) will expire at {pretty_datetime(ticket.expires_at)}. Please remove your items and signout of the storage spot before that time."
+                messages += (
+                    ("[DMS Storage] 48 Hour Notice", msg, None, [ticket.member.email]),
+                )
+
             if (
                 timezone.now() + timedelta(hours=24) > ticket.expires_at
                 and "24_UNTIL_EXPIRED" not in prior_notification_types
             ):
                 # Send notice: 24 hours remaining
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) will expire at {pretty_datetime(ticket.expires_at)}. Please remove your items and signout of the storage spot before that time or you will be temporarilly blocked from using project storage."
+                messages += (
+                    ("[DMS Storage] 24 Hour Notice", msg, None, [ticket.member.email]),
+                )
+
             if (
                 timezone.now() > ticket.expires_at
                 and "EXPIRED" not in prior_notification_types
             ):
                 # Send notice: Storage ticket expired
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) HAS EXPIRED as of {pretty_datetime(ticket.expires_at)}. Please remove your items and signout of the storage spot as soon as possible."
+                messages += (
+                    (
+                        "[DMS Storage] Storage Spot EXPIRED",
+                        msg,
+                        None,
+                        [ticket.member.email],
+                    ),
+                )
+
             if (
                 timezone.now() + timedelta(hours=48)
                 > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "48_UNTIL_FORFEIT" not in prior_notification_types
             ):
                 # Send notice: 48 hours before items are forfeit and marked to be discarded
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) expired {pretty_datetime(ticket.expires_at)}. If you do not remove your items and signout of the storage spot your property will be discarded and you will be banned from using storage for 90 days."
+                messages += (
+                    (
+                        "[DMS Storage] 48 Hour Notice - Property Forfeiture",
+                        msg,
+                        None,
+                        [ticket.member.email],
+                    ),
+                )
+
             if (
                 timezone.now() + timedelta(hours=24)
                 > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "24_UNTIL_FORFEIT" not in prior_notification_types
             ):
                 # Send notice: 24 hours before items are forfeit and marked to be discarded
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) expired {pretty_datetime(ticket.expires_at)}. If you do not remove your items and signout of the storage spot your property will be discarded and you will be banned from using storage for 90 days."
+                messages += (
+                    (
+                        "[DMS Storage] 24 Hour Notice - Property Forfeiture",
+                        msg,
+                        None,
+                        [ticket.member.email],
+                    ),
+                )
+
             if (
                 timezone.now() > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "FORFEIT" not in prior_notification_types
             ):
                 # Send notice: items are forfeit and marked to be discarded
-                # Update member.banned_until to now + STORAGE_RULES['long_ban']
-                # Update ticket.finished_at to now
-                pass
+                msg = f"Your storage spot ({ticket.spot.name}) expired {pretty_datetime(ticket.expires_at)}. Multiple notices have been sent, your property has been tagged to be discarded and you are banned from using project storage again for 90 days."
+                messages += (
+                    (
+                        "[DMS Storage] Final Notice - Property Forfeiture",
+                        msg,
+                        None,
+                        [ticket.member.email],
+                    ),
+                )
 
+                # Update member.banned_until to now + STORAGE_RULES['long_ban']
+                member_serializer = MemberSerializer(
+                    ticket.member,
+                    data={"banned_until": timezone.now() + STORAGE_RULES["long_ban"]},
+                    partial=True,
+                    context={"request": request},
+                )
+                if not member_serializer.is_valid():
+                    logger.warning(
+                        f"Unable to update banned_until for member {ticket.member.id}"
+                    )
+                    logger.warning(member_serializer)
+                member_serializer.save()
+
+                # Update ticket.finished_at to now
+                ticket_serializer = TicketSerializer(
+                    ticket,
+                    data={"finished_at": timezone.now()},
+                    partial=True,
+                    context={"request": request},
+                )
+                if not ticket_serializer.is_valid():
+                    logger.warning(
+                        f"Unable to update finished_at for ticket {ticket.id}"
+                    )
+                    logger.warning(ticket_serializer)
+                ticket_serializer.save()
+
+        send_mass_mail(messages)
         return Response({})
 
 
