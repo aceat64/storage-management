@@ -18,7 +18,6 @@ class Spot(models.Model):
     name = models.CharField(max_length=200)
     area = models.ForeignKey(
         Area,
-        related_name="spots",
         on_delete=models.DO_NOTHING,
     )
 
@@ -47,10 +46,8 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField(default=seven_days)
     finished_at = models.DateTimeField(null=True, blank=True)
-    spot = models.ForeignKey(Spot, related_name="tickets", on_delete=models.DO_NOTHING)
-    member = models.ForeignKey(
-        Member, related_name="tickets", on_delete=models.DO_NOTHING
-    )
+    spot = models.ForeignKey(Spot, on_delete=models.DO_NOTHING)
+    member = models.ForeignKey(Member, on_delete=models.DO_NOTHING)
 
     class Meta:
         constraints = [
@@ -73,9 +70,7 @@ class Ticket(models.Model):
 class Notification(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(default=timezone.now)
-    ticket = models.ForeignKey(
-        Ticket, related_name="notifications", on_delete=models.DO_NOTHING
-    )
+    ticket = models.ForeignKey(Ticket, on_delete=models.DO_NOTHING)
     type = models.CharField(
         max_length=50,
         choices=[

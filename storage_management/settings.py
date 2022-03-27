@@ -27,10 +27,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ.get("DEBUG", False))
+MOCK_MEMBERS = bool(os.environ.get("MOCK_MEMBERS", False))
 
 ALLOWED_HOSTS = ["*"]
 
+RFID_LOOKUP_URL = os.environ.get(
+    "RFID_LOOKUP_URL", "http://localhost:8080/api/v1/lookupByRfid"
+)
 
 # Application definition
 
@@ -83,11 +87,11 @@ WSGI_APPLICATION = "storage_management.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "storage_management",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "storage_management"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "postgres"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 

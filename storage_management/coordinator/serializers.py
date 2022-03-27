@@ -1,9 +1,13 @@
+from readline import insert_text
 from django.core.exceptions import ValidationError
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import serializers
 from django.utils import timezone
+from .utils import mock_members
 
 import requests
+
+from storage_management.settings import MOCK_MEMBERS, RFID_LOOKUP_URL
 from .models import (
     Area,
     Spot,
@@ -13,34 +17,35 @@ from .models import (
 )
 
 
-class AreaSerializer(serializers.HyperlinkedModelSerializer):
+class AreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Area
         fields = ["id", "url", "name"]
 
 
-class SpotSerializer(serializers.HyperlinkedModelSerializer):
+class SpotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Spot
         fields = ["id", "url", "name", "area"]
 
 
-class MemberSerializer(serializers.HyperlinkedModelSerializer):
+class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = ["id", "url", "name", "email", "badge_id", "banned_until"]
-        read_only_fields = ["name", "email", "banned_until"]
+        read_only_fields = ["name", "email"]
 
     def create(self, validated_data):
         """
         Lookup space member by rfid and upsert our local member record.
         """
         badge_id = validated_data.get("badge_id")
-        r = requests.post(
-            f"http://localhost:8080/api/v1/lookupByRfid", data={"rfid": badge_id}
-        )
-        r.raise_for_status()
-        result = r.json().get("result", {})
+        if MOCK_MEMBERS:
+            result = mock_members(int(badge_id))
+        else:
+            r = requests.post(RFID_LOOKUP_URL, data={"rfid": badge_id})
+            r.raise_for_status()
+            result = r.json().get("result", {})
         access_granted = result.get("accessGranted", None)
         user = result.get("user", {})
         name = user.get("fullName", None)
@@ -59,7 +64,7 @@ class MemberSerializer(serializers.HyperlinkedModelSerializer):
         return member
 
 
-class TicketSerializer(serializers.HyperlinkedModelSerializer):
+class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = [
@@ -88,6 +93,7 @@ class TicketSerializer(serializers.HyperlinkedModelSerializer):
         if member_ticket_open.exists():
             spot = member_ticket_open.first().spot
             raise ValidationError(f"Member '{member}' has spot '{spot}' in use!")
+        return member
 
     def create(self, validated_data):
         ticket = Ticket(**validated_data)
@@ -95,7 +101,7 @@ class TicketSerializer(serializers.HyperlinkedModelSerializer):
         return ticket
 
 
-class NotificationSerializer(serializers.HyperlinkedModelSerializer):
+class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = [
