@@ -20,6 +20,7 @@ from .serializers import (
     NotificationSerializer,
 )
 from django.db.models import Q
+from storage_management.settings import STORAGE_RULES
 
 
 class AreaViewSet(viewsets.ModelViewSet):
@@ -109,10 +110,10 @@ class TicketViewSet(viewsets.ModelViewSet):
         now = timezone.now()
         if ticket.expires_at > now:
             # 7 day ban, unused time refunded
-            banned_until = now + timedelta(days=7) - (ticket.expires_at - now)
-        elif ticket.expires_at + timedelta(days=7) > now:
+            banned_until = now + STORAGE_RULES["timeout"] - (ticket.expires_at - now)
+        elif ticket.expires_at + STORAGE_RULES["grace_period"] > now:
             # 14 day ban, no time refunded
-            banned_until = now + timedelta(days=14)
+            banned_until = now + STORAGE_RULES["short_ban"]
         else:
             # member should have already been automatically marked as banned by the cron job
             # something is weird if we got here
@@ -162,24 +163,24 @@ class TicketViewSet(viewsets.ModelViewSet):
                 pass
             if (
                 timezone.now() + timedelta(hours=48)
-                > ticket.expires_at + timedelta(days=7)
+                > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "48_UNTIL_FORFEIT" not in prior_notification_types
             ):
                 # Send notice: 48 hours before items are forfeit and marked to be discarded
                 pass
             if (
                 timezone.now() + timedelta(hours=24)
-                > ticket.expires_at + timedelta(days=7)
+                > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "24_UNTIL_FORFEIT" not in prior_notification_types
             ):
                 # Send notice: 24 hours before items are forfeit and marked to be discarded
                 pass
             if (
-                timezone.now() > ticket.expires_at + timedelta(days=7)
+                timezone.now() > ticket.expires_at + STORAGE_RULES["grace_period"]
                 and "FORFEIT" not in prior_notification_types
             ):
                 # Send notice: items are forfeit and marked to be discarded
-                # Update member.banned_until to now + 90 days
+                # Update member.banned_until to now + STORAGE_RULES['long_ban']
                 # Update ticket.finished_at to now
                 pass
 

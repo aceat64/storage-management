@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -35,6 +36,19 @@ ALLOWED_HOSTS = ["*"]
 RFID_LOOKUP_URL = os.environ.get(
     "RFID_LOOKUP_URL", "http://localhost:8080/api/v1/lookupByRfid"
 )
+
+STORAGE_RULES = {
+    # How long a storage ticket is good for
+    "duration": timedelta(days=7),
+    # How long after a storage ticket expires before it is moved to FORFEIT
+    "grace_period": timedelta(days=7),
+    # How long before storage can be used again, if signed out before ticket expires
+    "timeout": timedelta(days=7),
+    # How long to ban a member for letting a storage ticket expire
+    "short_ban": timedelta(days=14),
+    # How long to ban a member for letting a storage ticket go into FORFEIT
+    "long_ban": timedelta(days=90),
+}
 
 # Application definition
 
