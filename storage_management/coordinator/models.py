@@ -2,7 +2,7 @@ import uuid
 from humanize import naturaldelta
 from django.utils import timezone
 from django.db import models
-from .utils import seven_days
+from storage_management.settings import STORAGE_RULES
 
 
 class Area(models.Model):
@@ -44,7 +44,9 @@ class Member(models.Model):
 class Ticket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(default=timezone.now)
-    expires_at = models.DateTimeField(default=seven_days)
+    expires_at = models.DateTimeField(
+        default=timezone.now() + STORAGE_RULES["duration"]
+    )
     finished_at = models.DateTimeField(null=True, blank=True)
     spot = models.ForeignKey(Spot, on_delete=models.DO_NOTHING)
     member = models.ForeignKey(Member, on_delete=models.DO_NOTHING)

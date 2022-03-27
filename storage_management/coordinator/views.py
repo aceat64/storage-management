@@ -1,5 +1,5 @@
 from datetime import timedelta
-from rich import inspect
+from django.core.mail import send_mail
 from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -19,8 +19,8 @@ from .serializers import (
     TicketSerializer,
     NotificationSerializer,
 )
-from django.db.models import Q
 from storage_management.settings import STORAGE_RULES
+from .utils import pretty_datetime
 
 
 class AreaViewSet(viewsets.ModelViewSet):
@@ -131,6 +131,10 @@ class TicketViewSet(viewsets.ModelViewSet):
             )
         member_serializer.save()
 
+        # send confirmation email
+        msg = f"You have signed out of project storage spot {ticket.spot.name}. You can use project storage again after {pretty_datetime(banned_until)}."
+        send_mail("[DMS Storage] Spot Reserved", msg, None, [ticket.member.email])
+
         return Response(ticket_serializer.data)
 
     @action(detail=False)
@@ -138,7 +142,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         for ticket in Ticket.objects.filter(finished_at=None):
             member = ticket.member
             # todo: check against /member/create (lookupByRfid), in case their email address changed
-            inspect(type(member), title="type(member)")
+            # inspect(type(member), title="type(member)")
             prior_notification_types = [
                 notification.type
                 for notification in Notification.objects.filter(ticket=ticket)

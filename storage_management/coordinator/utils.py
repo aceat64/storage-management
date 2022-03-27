@@ -1,3 +1,4 @@
+import datetime
 from datetime import timedelta
 from django.utils import timezone
 
@@ -15,3 +16,7 @@ def mock_members(id: int):
         "accessGranted": accessGranted,
         "user": {"fullName": f"Test User {id}", "email": f"testuser{id}@test.test"},
     }
+
+
+def pretty_datetime(timestamp: datetime):
+    return timestamp.astimezone(None).strftime("%a %b %d %Y @ %I:%M %p %Z")

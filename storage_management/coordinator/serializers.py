@@ -1,9 +1,9 @@
-from readline import insert_text
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import serializers
 from django.utils import timezone
-from .utils import mock_members
+from .utils import mock_members, pretty_datetime
 
 import requests
 
@@ -98,6 +98,11 @@ class TicketSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ticket = Ticket(**validated_data)
         ticket.save()
+
+        # send confirmation email
+        msg = f"Your project storage spot ({ticket.spot.name}) has been reserved. This spot is yours until {pretty_datetime(ticket.expires_at)}."
+        send_mail("[DMS Storage] Spot Reserved", msg, None, [ticket.member.email])
+
         return ticket
 
 
