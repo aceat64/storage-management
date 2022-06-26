@@ -135,7 +135,7 @@ tornado = ["tornado (>=0.2)"]
 
 [[package]]
 name = "humanize"
-version = "4.1.0"
+version = "4.2.1"
 description = "Python humanize utilities"
 category = "main"
 optional = false
@@ -288,7 +288,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7ea5c065ca2a5638f80e5d05010f775edd9f37c045b1b93e75f0ffebc16aa62f"
+content-hash = "0eab6cf82e8ad7a974694750e69d14c1e6b09dee3c7ac48d56bfc79d697b1752"
 
 [metadata.files]
 asgiref = [
@@ -357,8 +357,8 @@ gunicorn = [
     {file = "gunicorn-20.1.0.tar.gz", hash = "sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8"},
 ]
 humanize = [
-    {file = "humanize-4.1.0-py3-none-any.whl", hash = "sha256:953b393f5bd67e19d47a4c0fd20c3a3537853967b307e49729c4755d3551753c"},
-    {file = "humanize-4.1.0.tar.gz", hash = "sha256:3a119b242ec872c029d8b7bf8435a61a5798f124b244a08013aec5617302f80e"},
+    {file = "humanize-4.2.1-py3-none-any.whl", hash = "sha256:895af56cfc63e1d453df6899d3f13861ecdef23e02407d2a84741561210416da"},
+    {file = "humanize-4.2.1.tar.gz", hash = "sha256:c8caa86a3e35fa60a6f31674bed2dcaf3a8495958880a00ad836226e0e6755b3"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
